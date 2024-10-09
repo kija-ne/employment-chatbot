@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WELCOME CHATBOT</title>
+    <link rel="stylesheet" href="styles_chat.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>WELCOME CHATBOT</h2>
+        </div>
+        <div class="chat-messages" id="chatBox"></div>
+        <div class="chat-input">
+            <input type="text" id="inputText" placeholder="여기에 메시지를 입력하세요." autocomplete="off">
+            <button id="attachButton" class="icon-button">📎</button>
+            <button id="sendButton">전송</button>
+            <input type="file" id="fileInput" style="display: none;">
+        </div>
+    </div>
+    <script>
+        const chatBox = document.getElementById('chatBox');
+        const inputText = document.getElementById('inputText');
+        const sendButton = document.getElementById('sendButton');
+        const attachButton = document.getElementById('attachButton');
+        const fileInput = document.getElementById('fileInput');
+
+        function addMessage(message, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message ' + sender;
+            messageElement.innerHTML = message; // innerText 대신 innerHTML 사용
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'message bot typing-indicator';
+            typingIndicator.innerHTML = '입력 중...';
+            typingIndicator.id = 'typingIndicator';
+            chatBox.appendChild(typingIndicator);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (typingIndicator) {
+                chatBox.removeChild(typingIndicator);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            addMessage('취업 지원 챗봇에 오신 것을 환영합니다!', 'bot');
+            addMessage('"이력서 작성 가이드", "직업 선택", "채용 공고 제공", "학습 자료 제공" 중 하나를 입력해 주세요.', 'bot');
+        });
+
+        sendButton.addEventListener('click', () => {
+            const message = inputText.value.trim();
+            if (message) {
+                addMessage(message, 'user');
+                inputText.value = '';
+
+                showTypingIndicator();
+
+                fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: message })
+                })
+                .then(response => response.json())
+                .then(response => {
+                    hideTypingIndicator();
+                    addMessage(response.response, 'bot');
+                });
+            }
+        });
+
+        inputText.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendButton.click();
+            }
+        });
+
+        // Event listener for the attach button
+        attachButton.addEventListener('click', (e) => {
+            e.preventDefault(); // Prevent default button behavior
+            fileInput.click();  // Trigger the file input dialog
+        });
+
+        // Event listener for file input change
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (file) {
+                addMessage(`선택된 파일: ${file.name}`, 'user');
+                // You can add further code here to handle file upload if needed
+            } else {
+                addMessage('파일을 선택하지 않았습니다.', 'bot');
+            }
+        });
+    </script>
+</body>
+</html>
